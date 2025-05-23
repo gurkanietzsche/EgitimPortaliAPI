@@ -1,0 +1,276 @@
+﻿@{
+    ViewData["Title"] = "Ana Sayfa";
+}
+
+<!-- DEBUG BİLGİLERİ - TempData ile güncellenmiş -->
+<div style="background: yellow; padding: 10px; margin: 10px; border: 2px solid red;">
+    <strong>DEBUG BİLGİLERİ:</strong><br>
+    UserRole: @TempData["UserRole"]<br>
+    UserEmail: @TempData["UserEmail"]<br>
+    JWToken: @(TempData["JWToken"] != null ? "Var" : "Yok")<br>
+    TempData Keys: @string.Join(", ", TempData.Keys)<br>
+</div>
+
+<!-- Giriş Kısmı -->
+<div class="jumbotron">
+    <h1 class="display-4">Eğitim Portalına Hoş Geldiniz!</h1>
+    <p class="lead">Bu portalda kendinizi geliştirebilecek çeşitli kurslara ulaşabilirsiniz.</p>
+    <hr class="my-4">
+    <p>Hemen keşfetmeye başlayın.</p>
+    <a class="btn btn-primary btn-lg" href="#kurslar" role="button">Kursları Görüntüle</a>
+</div>
+
+<!-- Kurslar Bölümü -->
+<div id="kurslar">
+    <h2 class="mb-4">Kurslar</h2>
+
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Kategoriler -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Kategoriler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group" id="categoryList">
+                        <button type="button" class="list-group-item list-group-item-action active" data-id="0">Tüm Kategoriler</button>
+                        <!-- Kategoriler burada listelenecek -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <!-- Kurs Listesi -->
+            <div class="row" id="courseList">
+                <!-- Kurslar burada listelenecek -->
+                <div class="col-12 text-center mb-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Yükleniyor...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kurs Detay Modalı -->
+<div class="modal fade" id="courseDetailModal" tabindex="-1" role="dialog" aria-labelledby="courseDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="courseDetailModalLabel">Kurs Detayı</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="courseDetailContent">
+                <!-- Kurs detayları burada yüklenecek -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" id="enrollButton">Kursa Kaydol</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            var selectedCourseId = 0;
+
+            // Kursları yükle
+            loadCourses();
+
+            // Kategorileri yükle
+            loadCategories();
+
+            // Kursa kaydolma butonu
+            $("#enrollButton").click(function() {
+                var isLoggedIn = @(TempData["JWToken"] != null ? "true" : "false");
+
+                if (!isLoggedIn) {
+                    window.location.href = "/Home/Login";
+                    return;
+                }
+
+                // Kursa kaydolma işlemi burada olacak
+                alert("Kursa kaydolma işlemi başarılı!");
+                $("#courseDetailModal").modal("hide");
+            });
+
+            // Kategorileri getirme fonksiyonu
+            function loadCategories() {
+                $.ajax({
+                    url: "/Home/GetCategories",
+                    type: "GET",
+                    success: function(response) {
+                        if (response.success) {
+                            var html = '<button type="button" class="list-group-item list-group-item-action active" data-id="0">Tüm Kategoriler</button>';
+
+                            $.each(response.data, function(index, category) {
+                                html += '<button type="button" class="list-group-item list-group-item-action" data-id="' + category.id + '">' + category.name + '</button>';
+                            });
+
+                            $("#categoryList").html(html);
+
+                            // Kategori filtreleme
+                            $(".list-group-item").click(function() {
+                                $(".list-group-item").removeClass("active");
+                                $(this).addClass("active");
+
+                                var categoryId = $(this).data("id");
+                                filterCoursesByCategory(categoryId);
+                            });
+                        }
+                    }
+                });
+            }
+
+            // Kursları getirme fonksiyonu
+            function loadCourses() {
+                $.ajax({
+                    url: "/Home/GetCourses",
+                    type: "GET",
+                    success: function(response) {
+                        if (response.success) {
+                            displayCourses(response.data);
+                        } else {
+                            $("#courseList").html('<div class="col-12"><div class="alert alert-danger">Kurslar yüklenirken bir hata oluştu.</div></div>');
+                        }
+                    },
+                    error: function() {
+                        $("#courseList").html('<div class="col-12"><div class="alert alert-danger">Kurslar yüklenirken bir hata oluştu.</div></div>');
+                    }
+                });
+            }
+
+            // Kursları listeleme fonksiyonu
+            function displayCourses(courses) {
+                if (courses.length === 0) {
+                    $("#courseList").html('<div class="col-12"><div class="alert alert-info">Henüz hiç kurs bulunmamaktadır.</div></div>');
+                    return;
+                }
+
+                var html = '';
+
+                $.each(courses, function(index, course) {
+                    html += '<div class="col-md-4 mb-4">';
+                    html += '    <div class="card h-100">';
+
+                    if (course.imageUrl) {
+                        html += '    <img src="' + course.imageUrl + '" class="card-img-top" alt="' + course.title + '" style="height: 180px; object-fit: cover;">';
+                    } else {
+                        html += '    <img src="/img/course-placeholder.jpg" class="card-img-top" alt="' + course.title + '" style="height: 180px; object-fit: cover;">';
+                    }
+
+                    html += '        <div class="card-body">';
+                    html += '            <h5 class="card-title">' + course.title + '</h5>';
+
+                    if (course.description) {
+                        var shortDesc = course.description.length > 100 ? course.description.substring(0, 100) + '...' : course.description;
+                        html += '        <p class="card-text">' + shortDesc + '</p>';
+                    }
+
+                    html += '            <p class="card-text text-primary font-weight-bold">' + course.price + ' TL</p>';
+                    html += '        </div>';
+                    html += '        <div class="card-footer">';
+                    html += '            <button class="btn btn-primary btn-block view-course" data-id="' + course.id + '">Detayları Gör</button>';
+                    html += '        </div>';
+                    html += '    </div>';
+                    html += '</div>';
+                });
+
+                $("#courseList").html(html);
+
+                // Kurs detayı butonları
+                $(".view-course").click(function() {
+                    var courseId = $(this).data("id");
+                    selectedCourseId = courseId;
+                    showCourseDetail(courseId);
+                });
+            }
+
+            // Kategoriye göre kursları filtreleme
+            function filterCoursesByCategory(categoryId) {
+                if (categoryId === 0) {
+                    loadCourses();
+                    return;
+                }
+
+                $.ajax({
+                    url: "/Home/GetCourses",
+                    type: "GET",
+                    success: function(response) {
+                        if (response.success) {
+                            var filteredCourses = [];
+
+                            $.each(response.data, function(index, course) {
+                                if (course.categoryId === categoryId) {
+                                    filteredCourses.push(course);
+                                }
+                            });
+
+                            displayCourses(filteredCourses);
+                        }
+                    }
+                });
+            }
+
+            // Kurs detayını gösterme
+            function showCourseDetail(courseId) {
+                $.ajax({
+                    url: "/Home/GetCourse",
+                    type: "GET",
+                    data: { id: courseId },
+                    success: function(response) {
+                        if (response.success) {
+                            var course = response.data;
+                            var html = '<div class="row">';
+
+                            // Resim
+                            html += '<div class="col-md-5">';
+                            if (course.imageUrl) {
+                                html += '<img src="' + course.imageUrl + '" class="img-fluid rounded" alt="' + course.title + '">';
+                            } else {
+                                html += '<img src="/img/course-placeholder.jpg" class="img-fluid rounded" alt="' + course.title + '">';
+                            }
+                            html += '</div>';
+
+                            // Detaylar
+                            html += '<div class="col-md-7">';
+                            html += '<h4>' + course.title + '</h4>';
+                            html += '<p class="text-primary font-weight-bold">' + course.price + ' TL</p>';
+
+                            if (course.description) {
+                                html += '<p>' + course.description + '</p>';
+                            }
+
+                            html += '<hr>';
+                            html += '<div class="row">';
+                            html += '<div class="col-md-6">';
+                            html += '<p><strong>Kategori:</strong> ' + (course.categoryName || 'Belirtilmemiş') + '</p>';
+                            html += '</div>';
+                            html += '<div class="col-md-6">';
+                            html += '<p><strong>Eğitmen:</strong> ' + (course.instructorName || 'Belirtilmemiş') + '</p>';
+                            html += '</div>';
+                            html += '</div>';
+                            html += '</div>';
+                            html += '</div>';
+
+                            $("#courseDetailContent").html(html);
+                            $("#courseDetailModalLabel").text(course.title);
+                            $("#courseDetailModal").modal("show");
+                        } else {
+                            alert("Kurs detayları yüklenirken bir hata oluştu.");
+                        }
+                    },
+                    error: function() {
+                        alert("Kurs detayları yüklenirken bir hata oluştu.");
+                    }
+                });
+            }
+        });
+    </script>
+}

@@ -1,0 +1,145 @@
+﻿@{
+    ViewData["Title"] = "Kurs Detayı";
+    int courseId = ViewBag.CourseId;
+}
+
+<div class="container">
+    <div class="row" id="courseDetail">
+        <!-- Kurs detayları burada yüklenecek -->
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Yükleniyor...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Kurs ID'si
+            const courseId = @courseId;
+
+            // Kurs detayını getir
+            loadCourseDetail(courseId);
+
+            // Kurs detayını getirme fonksiyonu
+            function loadCourseDetail(id) {
+                $.ajax({
+                    type: "GET",
+                    url: "/Home/GetCourse",
+                    data: { id: id },
+                    success: function(response) {
+                        if (response.success) {
+                            const course = response.data;
+
+                            // Sayfa başlığını güncelle
+                            document.title = course.title + " - Eğitim Portalı";
+
+                            let html = `
+                                <div class="col-md-8">
+                                    <div class="card shadow mb-4">
+                                        <div class="card-header py-3">
+                                            <h6 class="m-0 font-weight-bold text-primary">${course.title}</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="text-center mb-4">
+                                                <img src="${course.imageUrl || '/img/no-image.jpg'}" class="img-fluid rounded" alt="${course.title}" style="max-height: 300px;">
+                                            </div>
+                                            <h5>Kurs Açıklaması</h5>
+                                            <p>${course.description}</p>
+                                            <hr>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong>Kategori:</strong> ${course.categoryName || 'Belirtilmemiş'}</p>
+                                                    <p><strong>Eğitmen:</strong> ${course.instructorName || 'Belirtilmemiş'}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Oluşturulma Tarihi:</strong> ${new Date(course.createdDate).toLocaleDateString()}</p>
+                                                    <p><strong>Süre:</strong> ${course.duration || 0} dakika</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card shadow mb-4">
+                                        <div class="card-header py-3">
+                                            <h6 class="m-0 font-weight-bold text-primary">Kurs Bilgileri</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <h2 class="text-center text-primary mb-4">${course.price} TL</h2>
+                                            <button class="btn btn-primary btn-block mb-3" id="enrollButton">Kursa Kaydol</button>
+                                            <hr>
+                                            <div class="text-center">
+                                                <h6 class="font-weight-bold">Bu Kurs Hakkında</h6>
+                                                <p><i class="fas fa-users fa-fw"></i> ${course.enrollmentCount || 0} öğrenci</p>
+                                                <p><i class="fas fa-star fa-fw"></i> ${course.averageRating || 0} puan</p>
+                                                <p><i class="fas fa-signal fa-fw"></i> ${course.difficultyLevel || 'Orta'} seviye</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+                            $("#courseDetail").html(html);
+
+                            // Kursa kaydolma butonu tıklama olayı
+                            $("#enrollButton").click(function() {
+                                enrollCourse(courseId);
+                            });
+                        } else {
+                            $("#courseDetail").html(`
+                                <div class="col-12">
+                                    <div class="alert alert-danger">
+                                        <h4>Hata!</h4>
+                                        <p>${response.message || 'Kurs bulunamadı.'}</p>
+                                        <a href="/Home/Courses" class="btn btn-primary">Kurslara Dön</a>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                    },
+                    error: function() {
+                        $("#courseDetail").html(`
+                            <div class="col-12">
+                                <div class="alert alert-danger">
+                                    <h4>Hata!</h4>
+                                    <p>Kurs detayları yüklenirken bir hata oluştu.</p>
+                                    <a href="/Home/Courses" class="btn btn-primary">Kurslara Dön</a>
+                                </div>
+                            </div>
+                        `);
+                    }
+                });
+            }
+
+            // Kursa kaydolma fonksiyonu
+            function enrollCourse(courseId) {
+                // Kullanıcı giriş yapmış mı kontrol et
+                if (!@(Context.Session.GetString("JWToken") != null ? "true" : "false")) {
+                    window.location.href = "/Home/Login?returnUrl=/Home/CourseDetail/" + courseId;
+                    return;
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Home/EnrollCourse",
+                    data: { courseId: courseId },
+                    success: function(response) {
+                        if (response.success) {
+                            alert("Kursa başarıyla kaydoldunuz!");
+                            // Sayfayı yenile
+                            window.location.reload();
+                        } else {
+                            alert("Kursa kayıt işlemi başarısız: " + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert("Kursa kayıt işlemi sırasında bir hata oluştu.");
+                    }
+                });
+            }
+        });
+    </script>
+}
