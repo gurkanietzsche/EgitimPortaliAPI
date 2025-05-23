@@ -1,0 +1,403 @@
+﻿@{
+    ViewData["Title"] = "Kategori Yönetimi";
+}
+
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Kategori Yönetimi</h1>
+    <button class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm" id="showAddCategoryModal">
+        <i class="fas fa-plus fa-sm text-white-50"></i> Yeni Kategori Ekle
+    </button>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+    <div class="col-12">
+        <!-- Kategori Listesi -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">Kategori Listesi</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="categoriesTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Kategori Adı</th>
+                                <th>Açıklama</th>
+                                <th>Kurs Sayısı</th>
+                                <th>Oluşturulma Tarihi</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Kategoriler burada yüklenecek -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- İstatistik Kartları -->
+<div class="row">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Toplam Kategoriler
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalCategories">0</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            En Popüler Kategori
+                        </div>
+                        <div class="h6 mb-0 font-weight-bold text-gray-800" id="popularCategory">-</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-star fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Boş Kategoriler
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="emptyCategories">0</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kategori Ekleme/Düzenleme Modal -->
+<div class="modal fade" id="categoryModal" tabindex="-1" role="dialog" aria-labelledby="categoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoryModalLabel">Kategori Ekle</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <input type="hidden" id="categoryId" value="0">
+
+                    <div class="form-group">
+                        <label for="categoryName">Kategori Adı *</label>
+                        <input type="text" class="form-control" id="categoryName" required
+                               placeholder="Örn: Web Development, Grafik Tasarım">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="categoryDescription">Açıklama</label>
+                        <textarea class="form-control" id="categoryDescription" rows="4"
+                                  placeholder="Kategori hakkında kısa bir açıklama yazınız..."></textarea>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Not:</strong> Kategori silindikten sonra bu kategoriyi kullanan kurslar "Kategorisiz" olarak işaretlenecektir.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-success" id="saveCategoryBtn">
+                    <i class="fas fa-save"></i> Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- DataTables CSS -->
+    <link href="~/sbadmin2/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+
+    <!-- DataTables JS -->
+    <script src="~/sbadmin2/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/sbadmin2/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            let categoriesTable;
+            let isEditMode = false;
+            let allCategories = [];
+            let allCourses = [];
+
+            // DataTable'ı başlat
+            categoriesTable = $('#categoriesTable').DataTable({
+                "language": {
+                    "lengthMenu": "_MENU_ kayıt göster",
+                    "zeroRecords": "Kayıt bulunamadı",
+                    "info": "_START_ - _END_ arası, toplam _TOTAL_ kayıt",
+                    "infoEmpty": "Kayıt yok",
+                    "infoFiltered": "(_MAX_ kayıt içinden filtrelendi)",
+                    "search": "Ara:",
+                    "paginate": {
+                        "first": "İlk",
+                        "last": "Son",
+                        "next": "Sonraki",
+                        "previous": "Önceki"
+                    }
+                },
+                "responsive": true,
+                "pageLength": 25,
+                "order": [[0, "asc"]]
+            });
+
+            // Sayfa yüklendiğinde verileri getir
+            loadCategories();
+            loadCourses();
+
+            // Kategori ekleme modalını göster
+            $('#showAddCategoryModal').click(function() {
+                resetCategoryForm();
+                $('#categoryModalLabel').text('Yeni Kategori Ekle');
+                isEditMode = false;
+                $('#categoryModal').modal('show');
+            });
+
+            // Kategori kaydetme
+            $('#saveCategoryBtn').click(function() {
+                saveCategory();
+            });
+
+            function loadCategories() {
+                $.ajax({
+                    url: "/Home/GetCategories",
+                    type: "GET",
+                    success: function(response) {
+                        console.log("Kategoriler:", response);
+                        if (response.success) {
+                            allCategories = response.data;
+                            categoriesTable.clear();
+
+                            response.data.forEach(function(category) {
+                                // Bu kategorideki kurs sayısını hesapla
+                                const courseCount = allCourses.filter(course => course.categoryId === category.id).length;
+
+                                categoriesTable.row.add([
+                                    category.id,
+                                    category.name,
+                                    category.description || '-',
+                                    courseCount,
+                                    category.createdDate ? new Date(category.createdDate).toLocaleDateString('tr-TR') : '-',
+                                    `<div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-info btn-sm edit-category" data-id="${category.id}">
+                                            <i class="fas fa-edit"></i> Düzenle
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm delete-category" data-id="${category.id}" ${courseCount > 0 ? 'title="Bu kategoriyi kullanan kurslar var!"' : ''}>
+                                            <i class="fas fa-trash"></i> Sil
+                                        </button>
+                                    </div>`
+                                ]);
+                            });
+
+                            categoriesTable.draw();
+                            attachCategoryButtons();
+                            updateStatistics();
+                        } else {
+                            alert("Kategoriler yüklenirken hata: " + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("AJAX Error:", error);
+                        alert("Kategoriler yüklenirken bir hata oluştu: " + error);
+                    }
+                });
+            }
+
+            function loadCourses() {
+                $.ajax({
+                    url: "/Home/GetCourses",
+                    type: "GET",
+                    success: function(response) {
+                        if (response.success) {
+                            allCourses = response.data;
+                            // Kategoriler yüklendikten sonra istatistikleri güncelle
+                            if (allCategories.length > 0) {
+                                updateStatistics();
+                            }
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Kurslar yüklenirken hata:", error);
+                    }
+                });
+            }
+
+            function attachCategoryButtons() {
+                // Düzenle butonları
+                $('.edit-category').off('click').on('click', function() {
+                    const categoryId = $(this).data('id');
+                    editCategory(categoryId);
+                });
+
+                // Sil butonları
+                $('.delete-category').off('click').on('click', function() {
+                    const categoryId = $(this).data('id');
+                    deleteCategory(categoryId);
+                });
+            }
+
+            function editCategory(categoryId) {
+                const category = allCategories.find(c => c.id === categoryId);
+                if (category) {
+                    $('#categoryId').val(category.id);
+                    $('#categoryName').val(category.name);
+                    $('#categoryDescription').val(category.description);
+
+                    $('#categoryModalLabel').text('Kategori Düzenle');
+                    isEditMode = true;
+                    $('#categoryModal').modal('show');
+                }
+            }
+
+            function deleteCategory(categoryId) {
+                const category = allCategories.find(c => c.id === categoryId);
+                const courseCount = allCourses.filter(course => course.categoryId === categoryId).length;
+
+                let confirmMessage = `"${category.name}" kategorisini silmek istediğinize emin misiniz?`;
+                if (courseCount > 0) {
+                    confirmMessage += `\n\nDikkat: Bu kategoriyi kullanan ${courseCount} kurs var. Bu kurslar kategorisiz kalacaktır.`;
+                }
+
+                if (confirm(confirmMessage)) {
+                    $.ajax({
+                        url: "/Home/DeleteCategory",
+                        type: "POST",
+                        data: { id: categoryId },
+                        success: function(response) {
+                            if (response.success) {
+                                alert(response.message);
+                                loadCategories();
+                                loadCourses(); // Kursları da yeniden yükle
+                            } else {
+                                alert("Silme hatası: " + response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("AJAX Error:", error);
+                            alert("Kategori silinirken bir hata oluştu: " + error);
+                        }
+                    });
+                }
+            }
+
+            function saveCategory() {
+                const categoryData = {
+                    name: $('#categoryName').val().trim(),
+                    description: $('#categoryDescription').val().trim()
+                };
+
+                // Validasyon
+                if (!categoryData.name) {
+                    alert('Kategori adı boş olamaz.');
+                    return;
+                }
+
+                // Aynı isimde kategori var mı kontrol et
+                const existingCategory = allCategories.find(c =>
+                    c.name.toLowerCase() === categoryData.name.toLowerCase() &&
+                    (!isEditMode || c.id !== parseInt($('#categoryId').val()))
+                );
+
+                if (existingCategory) {
+                    alert('Bu isimde bir kategori zaten mevcut.');
+                    return;
+                }
+
+                let url = "/Home/AddCategory";
+                if (isEditMode) {
+                    url = "/Home/UpdateCategory";
+                    categoryData.id = parseInt($('#categoryId').val());
+                }
+
+                console.log("Gönderilen kategori verisi:", categoryData);
+
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: categoryData,
+                    success: function(response) {
+                        console.log("Kategori kaydetme yanıtı:", response);
+                        if (response.success) {
+                            alert(response.message);
+                            $('#categoryModal').modal('hide');
+                            loadCategories();
+                        } else {
+                            alert("Kaydetme hatası: " + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("AJAX Error:", xhr.responseText);
+                        alert("Kategori kaydedilirken bir hata oluştu: " + error);
+                    }
+                });
+            }
+
+            function resetCategoryForm() {
+                $('#categoryForm')[0].reset();
+                $('#categoryId').val('0');
+            }
+
+            function updateStatistics() {
+                const totalCategories = allCategories.length;
+                $('#totalCategories').text(totalCategories);
+
+                // En popüler kategoriyi bul (en çok kursa sahip)
+                let popularCategory = '-';
+                let maxCourseCount = 0;
+
+                allCategories.forEach(category => {
+                    const courseCount = allCourses.filter(course => course.categoryId === category.id).length;
+                    if (courseCount > maxCourseCount) {
+                        maxCourseCount = courseCount;
+                        popularCategory = category.name + ` (${courseCount} kurs)`;
+                    }
+                });
+
+                $('#popularCategory').text(popularCategory);
+
+                // Boş kategorileri say
+                const emptyCategories = allCategories.filter(category => {
+                    const courseCount = allCourses.filter(course => course.categoryId === category.id).length;
+                    return courseCount === 0;
+                }).length;
+
+                $('#emptyCategories').text(emptyCategories);
+            }
+        });
+    </script>
+}

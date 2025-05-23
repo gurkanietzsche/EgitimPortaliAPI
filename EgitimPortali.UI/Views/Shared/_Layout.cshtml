@@ -264,6 +264,10 @@
 
     @await RenderSectionAsync("Scripts", required: false)
 
+    // _Layout.cshtml dosyasının en son script bölümünde değiştirilecek JavaScript kodu
+
+    // _Layout.cshtml dosyasının script bölümünü tamamen bu kodla değiştirin
+
     <script>
         $(document).ready(function() {
             // Çıkış işlemi
@@ -276,40 +280,75 @@
                         if (response.success) {
                             window.location.href = "/";
                         }
+                    },
+                    error: function() {
+                        alert("Çıkış işlemi sırasında bir hata oluştu.");
                     }
                 });
             });
 
-            // Sidebar menu click events
-            $("#kursListesi").click(function(e) {
+            // Sidebar menu click events - ÇALIŞAN LİNKLER
+            $("#kursListesi, a[href*='kursListesi']").click(function(e) {
                 e.preventDefault();
-                alert("Kurs Listesi sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Tüm kursları görüntüleyebileceksiniz\n• Kurs detaylarını düzenleyebileceksiniz\n• Kursları silebileceksiniz");
+                // Kurs yönetim sayfasına yönlendir
+                window.location.href = "/Home/CourseManagement";
             });
 
-            $("#kursEkle").click(function(e) {
+            $("#kursEkle, a[href*='kursEkle']").click(function(e) {
                 e.preventDefault();
-                alert("Kurs Ekleme sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Yeni kurs ekleyebileceksiniz\n• Kurs bilgilerini girebileceksiniz\n• Kurs resmi yükleyebileceksiniz");
+                // Kurs yönetim sayfasına yönlendir ve modal açılacak şekilde işaretle
+                window.location.href = "/Home/CourseManagement?action=add";
             });
 
-            $("#kategoriListesi").click(function(e) {
+            $("#kategoriListesi, a[href*='kategoriListesi']").click(function(e) {
                 e.preventDefault();
-                alert("Kategori Listesi sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Tüm kategorileri görüntüleyebileceksiniz\n• Kategori detaylarını düzenleyebileceksiniz\n• Kategorileri silebileceksiniz");
+                // Kategori yönetim sayfasına yönlendir
+                window.location.href = "/Home/CategoryManagement";
             });
 
-            $("#kategoriEkle").click(function(e) {
+            $("#kategoriEkle, a[href*='kategoriEkle']").click(function(e) {
                 e.preventDefault();
-                alert("Kategori Ekleme sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Yeni kategori ekleyebileceksiniz\n• Kategori adı ve açıklaması girebileceksiniz");
+                // Kategori yönetim sayfasına yönlendir ve modal açılacak şekilde işaretle
+                window.location.href = "/Home/CategoryManagement?action=add";
             });
 
-            $("#kullaniciListesi").click(function(e) {
+            $("#kullaniciListesi, a[href*='kullaniciListesi']").click(function(e) {
                 e.preventDefault();
-                alert("Kullanıcı Listesi sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Tüm kullanıcıları görüntüleyebileceksiniz\n• Kullanıcı rollerini düzenleyebileceksiniz\n• Kullanıcıları aktif/pasif yapabileceksiniz");
+                alert("Kullanıcı Yönetimi sayfası yakında eklenecektir.\n\nBu bölümde:\n• Tüm kullanıcıları görüntüleyebileceksiniz\n• Kullanıcı rollerini düzenleyebileceksiniz\n• Kullanıcıları aktif/pasif yapabileceksiniz");
             });
 
             // Dashboard link'i çalışır durumda
             $('a[href="/Home/AdminPanel"]').click(function(e) {
                 window.location.href = "/Home/AdminPanel";
             });
+
+            // Normal kullanıcı menüsü için
+            $("#hesabim").click(function(e) {
+                e.preventDefault();
+                alert("Hesap yönetimi sayfası yakında eklenecektir.");
+            });
+
+            $("#kurslarim").click(function(e) {
+                e.preventDefault();
+                alert("Kurslarım sayfası yakında eklenecektir.");
+            });
+
+            // URL parametresi kontrolü - eğer action=add varsa modal aç
+            const urlParams = new URLSearchParams(window.location.search);
+            const action = urlParams.get('action');
+
+            if (action === 'add') {
+                // Sayfa yüklendikten 1 saniye sonra modal aç
+                setTimeout(function() {
+                    if (window.location.pathname.includes('CourseManagement')) {
+                        // Kurs ekleme modalını aç
+                        $("#showAddCourseModal").click();
+                    } else if (window.location.pathname.includes('CategoryManagement')) {
+                        // Kategori ekleme modalını aç
+                        $("#showAddCategoryModal").click();
+                    }
+                }, 1000);
+            }
         });
     </script>
 </body>

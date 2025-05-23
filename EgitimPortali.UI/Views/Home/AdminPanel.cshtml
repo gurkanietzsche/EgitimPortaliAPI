@@ -329,6 +329,10 @@
     <!-- Custom scripts for all pages-->
     <script src="~/sbadmin2/js/sb-admin-2.min.js"></script>
 
+    // AdminPanel.cshtml dosyasının script bölümünde değiştirilecek JavaScript kodu
+
+    // AdminPanel.cshtml dosyasının script bölümünü tamamen bu kodla değiştirin
+
     <script>
         $(document).ready(function() {
             // Dashboard verilerini yükle
@@ -342,7 +346,15 @@
                     success: function(response) {
                         if (response.success) {
                             $("#totalCourses").text(response.data.length || 0);
+
+                            // Son eklenen kursları göster
+                            displayLatestCourses(response.data);
+                        } else {
+                            console.error("Kurslar yüklenirken hata:", response.message);
                         }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Kurslar AJAX hatası:", error);
                     }
                 });
 
@@ -353,9 +365,68 @@
                     success: function(response) {
                         if (response.success) {
                             $("#totalCategories").text(response.data.length || 0);
+
+                            // Kategorileri göster
+                            displayCategories(response.data);
+                        } else {
+                            console.error("Kategoriler yüklenirken hata:", response.message);
                         }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Kategoriler AJAX hatası:", error);
                     }
                 });
+            }
+
+            function displayLatestCourses(courses) {
+                let html = '';
+                if (courses.length === 0) {
+                    html = '<p class="text-muted text-center">Henüz kurs bulunmamaktadır.</p>';
+                } else {
+                    // Son 5 kursu göster
+                    const latestCourses = courses.slice(-5).reverse();
+
+                    latestCourses.forEach(function(course) {
+                        html += `
+                            <div class="row mb-2">
+                                <div class="col-8">
+                                    <h6 class="mb-1">${course.title}</h6>
+                                    <small class="text-muted">${course.categoryName || 'Kategorisiz'}</small>
+                                </div>
+                                <div class="col-4 text-right">
+                                    <span class="font-weight-bold text-success">${course.price} TL</span>
+                                </div>
+                            </div>
+                            <hr class="mt-2 mb-2">
+                        `;
+                    });
+                }
+
+                $("#coursesList").html(html);
+            }
+
+            function displayCategories(categories) {
+                let html = '';
+                if (categories.length === 0) {
+                    html = '<p class="text-muted text-center">Henüz kategori bulunmamaktadır.</p>';
+                } else {
+                    categories.forEach(function(category) {
+                        html += `
+                            <div class="row mb-2">
+                                <div class="col-9">
+                                    <h6 class="mb-1">${category.name}</h6>
+                                    <small class="text-muted">${category.description || 'Açıklama yok'}</small>
+                                </div>
+                                <div class="col-3 text-right">
+                                    <span class="badge badge-primary">ID: ${category.id}</span>
+                                </div>
+                            </div>
+                            <hr class="mt-2 mb-2">
+                        `;
+                    });
+                }
+
+                $("#categoriesList").html(html);
             }
 
             // Çıkış işlemi
@@ -368,34 +439,41 @@
                         if (response.success) {
                             window.location.href = "/";
                         }
+                    },
+                    error: function() {
+                        alert("Çıkış işlemi sırasında bir hata oluştu.");
                     }
                 });
             });
 
-            // Sidebar menu click events
+            // Sidebar menu click events - ÇALIŞAN LİNKLER
             $("#kursListesi").click(function(e) {
                 e.preventDefault();
-                alert("Kurs Listesi sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Tüm kursları görüntüleyebileceksiniz\n• Kurs detaylarını düzenleyebileceksiniz\n• Kursları silebileceksiniz");
+                // Kurs yönetim sayfasına yönlendir
+                window.location.href = "/Home/CourseManagement";
             });
 
             $("#kursEkle").click(function(e) {
                 e.preventDefault();
-                alert("Kurs Ekleme sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Yeni kurs ekleyebileceksiniz\n• Kurs bilgilerini girebileceksiniz\n• Kurs resmi yükleyebileceksiniz");
+                // Kurs yönetim sayfasına yönlendir ve modal açılacak şekilde işaretle
+                window.location.href = "/Home/CourseManagement?action=add";
             });
 
             $("#kategoriListesi").click(function(e) {
                 e.preventDefault();
-                alert("Kategori Listesi sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Tüm kategorileri görüntüleyebileceksiniz\n• Kategori detaylarını düzenleyebileceksiniz\n• Kategorileri silebileceksiniz");
+                // Kategori yönetim sayfasına yönlendir
+                window.location.href = "/Home/CategoryManagement";
             });
 
             $("#kategoriEkle").click(function(e) {
                 e.preventDefault();
-                alert("Kategori Ekleme sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Yeni kategori ekleyebileceksiniz\n• Kategori adı ve açıklaması girebileceksiniz");
+                // Kategori yönetim sayfasına yönlendir ve modal açılacak şekilde işaretle
+                window.location.href = "/Home/CategoryManagement?action=add";
             });
 
             $("#kullaniciListesi").click(function(e) {
                 e.preventDefault();
-                alert("Kullanıcı Listesi sayfası henüz hazırlanmadı.\n\nBu bölümde:\n• Tüm kullanıcıları görüntüleyebileceksiniz\n• Kullanıcı rollerini düzenleyebileceksiniz\n• Kullanıcıları aktif/pasif yapabileceksiniz");
+                alert("Kullanıcı Yönetimi sayfası yakında eklenecektir.\n\nBu bölümde:\n• Tüm kullanıcıları görüntüleyebileceksiniz\n• Kullanıcı rollerini düzenleyebileceksiniz\n• Kullanıcıları aktif/pasif yapabileceksiniz");
             });
         });
     </script>

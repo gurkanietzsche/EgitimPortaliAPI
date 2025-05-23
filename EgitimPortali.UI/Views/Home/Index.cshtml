@@ -2,15 +2,6 @@
     ViewData["Title"] = "Ana Sayfa";
 }
 
-<!-- DEBUG BİLGİLERİ - TempData ile güncellenmiş -->
-<div style="background: yellow; padding: 10px; margin: 10px; border: 2px solid red;">
-    <strong>DEBUG BİLGİLERİ:</strong><br>
-    UserRole: @TempData["UserRole"]<br>
-    UserEmail: @TempData["UserEmail"]<br>
-    JWToken: @(TempData["JWToken"] != null ? "Var" : "Yok")<br>
-    TempData Keys: @string.Join(", ", TempData.Keys)<br>
-</div>
-
 <!-- Giriş Kısmı -->
 <div class="jumbotron">
     <h1 class="display-4">Eğitim Portalına Hoş Geldiniz!</h1>
@@ -88,16 +79,31 @@
 
             // Kursa kaydolma butonu
             $("#enrollButton").click(function() {
-                var isLoggedIn = @(TempData["JWToken"] != null ? "true" : "false");
+                var token = '@Context.Session.GetString("JWToken")';
+                var isLoggedIn = token && token.length > 0;
 
                 if (!isLoggedIn) {
                     window.location.href = "/Home/Login";
                     return;
                 }
 
-                // Kursa kaydolma işlemi burada olacak
-                alert("Kursa kaydolma işlemi başarılı!");
-                $("#courseDetailModal").modal("hide");
+                // Kursa kaydolma işlemi
+                $.ajax({
+                    url: "/Home/EnrollCourse",
+                    type: "POST",
+                    data: { courseId: selectedCourseId },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            $("#courseDetailModal").modal("hide");
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function() {
+                        alert("Kursa kaydolma işlemi sırasında bir hata oluştu.");
+                    }
+                });
             });
 
             // Kategorileri getirme fonksiyonu
