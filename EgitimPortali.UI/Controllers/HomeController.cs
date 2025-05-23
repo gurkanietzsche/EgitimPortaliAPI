@@ -21,9 +21,7 @@ namespace EgitimPortali.UI.Controllers
             _httpClient = httpClientFactory.CreateClient();
 
             // API URL'ini çeşitli kaynaklardan al
-            _apiUrl = _configuration["ApiSettings:BaseUrl"] ??
-                     _configuration.GetConnectionString("ApiBaseUrl") ??
-                     "https://localhost:7155";
+            _apiUrl = _configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7155";
 
             _logger.LogInformation($"API URL: {_apiUrl}");
         }
@@ -274,7 +272,7 @@ namespace EgitimPortali.UI.Controllers
         {
             try
             {
-                var categoriesUrl = $"{_apiUrl}/api/Categories";
+                var categoriesUrl = $"{_apiUrl}/api/Category";
                 _logger.LogInformation($"Getting categories from: {categoriesUrl}");
 
                 var token = HttpContext.Session.GetString("JWToken");

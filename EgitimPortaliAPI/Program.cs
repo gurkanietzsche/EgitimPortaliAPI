@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using EgitimPortaliAPI.Models;
+using EgitimPortaliAPI.Repositories; // Repositories klasörünü ekle
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +16,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Identity konfigürasyonu (ÖNEMLİ: Bu eksikti!)
+// Identity konfigürasyonu
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -56,6 +57,19 @@ builder.Services.AddCors(options =>
                 .AllowAnyHeader();
         });
 });
+
+// Repository'leri DI sistemine kaydet (Interface olmadan)
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<CourseRepository>();
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<EnrollmentRepository>();
+
+// Eğer başka repository'ler varsa, onları da buraya ekleyin
+builder.Services.AddScoped<AssignmentRepository>();
+builder.Services.AddScoped<InstructorRepository>();
+builder.Services.AddScoped<LessonRepository>();
+builder.Services.AddScoped<PaymentRepository>();
+builder.Services.AddScoped<ReviewRepository>();
 
 var app = builder.Build();
 
@@ -126,5 +140,4 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.Run();
 app.Run();

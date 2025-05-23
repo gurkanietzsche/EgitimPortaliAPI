@@ -4,6 +4,7 @@ using EgitimPortaliAPI.Models;
 using EgitimPortaliAPI.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace EgitimPortaliAPI.Controllers
 {
@@ -19,12 +20,16 @@ namespace EgitimPortaliAPI.Controllers
             _categoryRepository = categoryRepository;
             _mapper = mapper;
         }
-
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAllCategories()
         {
             var categories = await _categoryRepository.GetAllCategories();
-            return Ok(_mapper.Map<IEnumerable<CategoryDto>>(categories));
+            Console.WriteLine(JsonConvert.SerializeObject(categories)); // Ham veriyi logla
+
+            var mappedCategories = _mapper.Map<IEnumerable<CategoryDto>>(categories);
+            Console.WriteLine(JsonConvert.SerializeObject(mappedCategories)); // Haritalanmış veriyi logla
+
+            return Ok(mappedCategories);
         }
 
         [HttpGet("{id}")]

@@ -266,8 +266,6 @@
 
     // _Layout.cshtml dosyasının en son script bölümünde değiştirilecek JavaScript kodu
 
-    // _Layout.cshtml dosyasının script bölümünü tamamen bu kodla değiştirin
-
     <script>
         $(document).ready(function() {
             // Çıkış işlemi
@@ -280,39 +278,36 @@
                         if (response.success) {
                             window.location.href = "/";
                         }
-                    },
-                    error: function() {
-                        alert("Çıkış işlemi sırasında bir hata oluştu.");
                     }
                 });
             });
 
             // Sidebar menu click events - ÇALIŞAN LİNKLER
-            $("#kursListesi, a[href*='kursListesi']").click(function(e) {
+            $("#kursListesi").click(function(e) {
                 e.preventDefault();
                 // Kurs yönetim sayfasına yönlendir
                 window.location.href = "/Home/CourseManagement";
             });
 
-            $("#kursEkle, a[href*='kursEkle']").click(function(e) {
+            $("#kursEkle").click(function(e) {
                 e.preventDefault();
                 // Kurs yönetim sayfasına yönlendir ve modal açılacak şekilde işaretle
                 window.location.href = "/Home/CourseManagement?action=add";
             });
 
-            $("#kategoriListesi, a[href*='kategoriListesi']").click(function(e) {
+            $("#kategoriListesi").click(function(e) {
                 e.preventDefault();
                 // Kategori yönetim sayfasına yönlendir
                 window.location.href = "/Home/CategoryManagement";
             });
 
-            $("#kategoriEkle, a[href*='kategoriEkle']").click(function(e) {
+            $("#kategoriEkle").click(function(e) {
                 e.preventDefault();
                 // Kategori yönetim sayfasına yönlendir ve modal açılacak şekilde işaretle
                 window.location.href = "/Home/CategoryManagement?action=add";
             });
 
-            $("#kullaniciListesi, a[href*='kullaniciListesi']").click(function(e) {
+            $("#kullaniciListesi").click(function(e) {
                 e.preventDefault();
                 alert("Kullanıcı Yönetimi sayfası yakında eklenecektir.\n\nBu bölümde:\n• Tüm kullanıcıları görüntüleyebileceksiniz\n• Kullanıcı rollerini düzenleyebileceksiniz\n• Kullanıcıları aktif/pasif yapabileceksiniz");
             });
@@ -332,23 +327,6 @@
                 e.preventDefault();
                 alert("Kurslarım sayfası yakında eklenecektir.");
             });
-
-            // URL parametresi kontrolü - eğer action=add varsa modal aç
-            const urlParams = new URLSearchParams(window.location.search);
-            const action = urlParams.get('action');
-
-            if (action === 'add') {
-                // Sayfa yüklendikten 1 saniye sonra modal aç
-                setTimeout(function() {
-                    if (window.location.pathname.includes('CourseManagement')) {
-                        // Kurs ekleme modalını aç
-                        $("#showAddCourseModal").click();
-                    } else if (window.location.pathname.includes('CategoryManagement')) {
-                        // Kategori ekleme modalını aç
-                        $("#showAddCategoryModal").click();
-                    }
-                }, 1000);
-            }
         });
     </script>
 </body>

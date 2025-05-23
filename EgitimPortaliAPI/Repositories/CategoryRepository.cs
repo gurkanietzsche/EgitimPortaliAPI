@@ -1,5 +1,6 @@
 ﻿using EgitimPortaliAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace EgitimPortaliAPI.Repositories
 {
@@ -14,10 +15,13 @@ namespace EgitimPortaliAPI.Repositories
 
         public async Task<IEnumerable<Category>> GetAllCategories()
         {
-            return await _context.Categories
+            var categories = await _context.Categories
                 .Include(c => c.Courses)
                 .Where(c => c.IsActive)
                 .ToListAsync();
+
+            Console.WriteLine(JsonConvert.SerializeObject(categories)); // Tüm veriyi logla
+            return categories;
         }
 
         public async Task<Category> GetCategoryById(int id)

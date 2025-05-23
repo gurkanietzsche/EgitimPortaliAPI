@@ -31,7 +31,7 @@ namespace EgitimPortaliAPI.Mappings
 
             // Kategori Mappingleri
             CreateMap<Category, CategoryDto>()
-                .ForMember(dest => dest.CourseCount, opt => opt.MapFrom(src => src.Courses.Count));
+    .ForMember(dest => dest.CourseCount, opt => opt.MapFrom(src => src.Courses != null ? src.Courses.Count : 0));
             CreateMap<CreateCategoryDto, Category>()
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true));
             CreateMap<UpdateCategoryDto, Category>();
