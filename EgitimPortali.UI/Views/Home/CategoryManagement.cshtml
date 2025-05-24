@@ -2,143 +2,85 @@
     ViewData["Title"] = "Kategori Yönetimi";
 }
 
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Kategori Yönetimi</h1>
-    <button class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm" id="showAddCategoryModal">
-        <i class="fas fa-plus fa-sm text-white-50"></i> Yeni Kategori Ekle
-    </button>
+<div class="container mt-4">
+    <h2>Kategori Yönetimi</h2>
+
+    <div id="alertContainer"></div>
+
+    <div class="mb-3">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+            Yeni Kategori Ekle
+        </button>
+    </div>
+
+    <div id="categoriesContainer">
+        <!-- Bu bölüm JavaScript ile doldurulacak -->
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+            <p>Kategori verileri yükleniyor...</p>
+        </div>
+    </div>
 </div>
 
-<!-- Content Row -->
-<div class="row">
-    <div class="col-12">
-        <!-- Kategori Listesi -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-success">Kategori Listesi</h6>
+<!-- Yeni Kategori Ekleme Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryModalLabel">Yeni Kategori Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered" id="categoriesTable" width="100%" cellspacing="0">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Kategori Adı</th>
-                                <th>Açıklama</th>
-                                <th>Kurs Sayısı</th>
-                                <th>Oluşturulma Tarihi</th>
-                                <th>İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Kategoriler burada yüklenecek -->
-                        </tbody>
-                    </table>
-                </div>
+            <div class="modal-body">
+                <form id="addCategoryForm">
+                    <div class="mb-3">
+                        <label for="addName" class="form-label">Kategori Adı</label>
+                        <input type="text" class="form-control" id="addName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addDescription" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="addDescription" rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kategori Düzenleme Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCategoryModalLabel">Kategori Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCategoryForm">
+                    <input type="hidden" id="editCategoryId">
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Kategori Adı</label>
+                        <input type="text" class="form-control" id="editName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="editDescription" rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">Güncelle</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <!-- DataTables CSS -->
-    <link href="~/sbadmin2/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
-
-    <!-- DataTables JS -->
-    <script src="~/sbadmin2/vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="~/sbadmin2/vendor/datatables/dataTables.bootstrap4.min.js"></script>
-
-    <!-- Kendi JavaScript Kodunuz -->
-    <script>
-        $(document).ready(function() {
-            let categoriesTable;
-            let allCategories = [];
-
-            // DataTables başlatma
-            categoriesTable = $('#categoriesTable').DataTable({
-                "language": {
-                    "lengthMenu": "_MENU_ kayıt göster",
-                    "zeroRecords": "Kayıt bulunamadı",
-                    "info": "_START_ - _END_ arası, toplam _TOTAL_ kayıt",
-                    "infoEmpty": "Kayıt yok",
-                    "infoFiltered": "(_MAX_ kayıt içinden filtrelendi)",
-                    "search": "Ara:",
-                    "paginate": {
-                        "first": "İlk",
-                        "last": "Son",
-                        "next": "Sonraki",
-                        "previous": "Önceki"
-                    }
-                },
-                "responsive": true,
-                "pageLength": 25,
-                "order": [[0, "asc"]]
-            });
-
-            // Kategorileri yükle
-            loadCategories();
-
-            function loadCategories() {
-                $.ajax({
-                    url: "/Home/GetCategories",
-                    type: "GET",
-                    success: function(response) {
-                        console.log("API Yanıtı:", response);
-
-                        if (response.success) {
-                            allCategories = response.data; // Kategorileri global değişkene ata
-                            categoriesTable.clear(); // Tabloyu temizle
-
-                            response.data.forEach(function(category) {
-                                categoriesTable.row.add([
-                                    category.id || '-', // ID
-                                    category.name || '-', // Kategori Adı
-                                    category.description || '-', // Açıklama
-                                    category.courseCount || 0, // Kurs Sayısı
-                                    category.createdDate
-                                        ? new Date(category.createdDate).toLocaleDateString('tr-TR')
-                                        : '-', // Oluşturulma Tarihi
-                                    `
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-info btn-sm edit-category" data-id="${category.id}">
-                                            <i class="fas fa-edit"></i> Düzenle
-                                        </button>
-                                        <button type="button" class="btn btn-danger btn-sm delete-category" data-id="${category.id}">
-                                            <i class="fas fa-trash"></i> Sil
-                                        </button>
-                                    </div>
-                                    ` // İşlemler
-                                ]);
-                            });
-
-                            categoriesTable.draw(); // Tabloyu yeniden çiz
-                            attachCategoryButtons(); // Butonları yeniden bağla
-                        } else {
-                            alert("Kategoriler yüklenirken hata: " + response.message);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("AJAX Hatası:", error);
-                    }
-                });
-            }
-
-            // Butonlara event bağlama
-            function attachCategoryButtons() {
-                console.log("Butonlar bağlanıyor...");
-                $('.edit-category').on('click', function() {
-                    const categoryId = $(this).data('id');
-                    console.log(`Düzenle butonuna tıklandı. Kategori ID: ${categoryId}`);
-                    // Düzenleme işlemleri burada yapılabilir
-                });
-
-                $('.delete-category').on('click', function() {
-                    const categoryId = $(this).data('id');
-                    console.log(`Sil butonuna tıklandı. Kategori ID: ${categoryId}`);
-                    // Silme işlemleri burada yapılabilir
-                });
-            }
-        });
-    </script>
+    <script src="~/js/categoryOperations.js"></script>
 }

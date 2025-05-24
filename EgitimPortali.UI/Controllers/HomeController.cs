@@ -84,7 +84,15 @@ namespace EgitimPortali.UI.Controllers
             return View();
         }
 
-        // YENİ - API TEST SAYFASI
+        public IActionResult UserManagement()
+        {
+            if (HttpContext.Session.GetString("UserRole") != "Admin")
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            return View();
+        }
+
         public IActionResult ApiTest()
         {
             return View();
@@ -312,6 +320,42 @@ namespace EgitimPortali.UI.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetCategory(int id)
+        {
+            try
+            {
+                var categoryUrl = $"{_apiUrl}/api/Category/{id}";
+                _logger.LogInformation($"Getting category from: {categoryUrl}");
+
+                var token = HttpContext.Session.GetString("JWToken");
+                if (!string.IsNullOrEmpty(token))
+                {
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                }
+
+                var response = await _httpClient.GetAsync(categoryUrl);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadAsStringAsync();
+                    var data = JsonConvert.DeserializeObject<dynamic>(result);
+                    return Json(new { success = true, data = data });
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Get Category API Error: {response.StatusCode} - {errorContent}");
+                    return Json(new { success = false, message = "Kategori bulunamadı" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Exception in GetCategory: {ex.Message}");
+                return Json(new { success = false, message = $"Hata: {ex.Message}" });
+            }
+        }
+
         // KURS YÖNETİMİ METODLARI
         [HttpPost]
         public async Task<IActionResult> AddCourse(string title, string description, decimal price, int categoryId, string imageUrl, int duration, string difficultyLevel)
@@ -480,7 +524,7 @@ namespace EgitimPortali.UI.Controllers
 
                 _logger.LogInformation($"Adding category: {json}");
 
-                var response = await _httpClient.PostAsync($"{_apiUrl}/api/Categories", content);
+                var response = await _httpClient.PostAsync($"{_apiUrl}/api/Category", content);
 
                 _logger.LogInformation($"Add Category Response Status: {response.StatusCode}");
 
@@ -528,7 +572,7 @@ namespace EgitimPortali.UI.Controllers
                 var json = JsonConvert.SerializeObject(categoryData);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PutAsync($"{_apiUrl}/api/Categories/{id}", content);
+                var response = await _httpClient.PutAsync($"{_apiUrl}/api/Category/{id}", content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -564,7 +608,7 @@ namespace EgitimPortali.UI.Controllers
                     _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 }
 
-                var response = await _httpClient.DeleteAsync($"{_apiUrl}/api/Categories/{id}");
+                var response = await _httpClient.DeleteAsync($"{_apiUrl}/api/Category/{id}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -580,6 +624,220 @@ namespace EgitimPortali.UI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Exception in DeleteCategory: {ex.Message}");
+                return Json(new { success = false, message = $"Hata: {ex.Message}" });
+            }
+        }
+
+        // KULLANICI YÖNETİMİ METODLARI
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
+        {
+            try
+            {
+                if (HttpContext.Session.GetString("UserRole") != "Admin")
+                {
+                    return Json(new { success = false, message = "Bu işlem için yetkiniz yok." });
+                }
+
+                var token = HttpContext.Session.GetString("JWToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    return Json(new { success = false, message = "Oturum bulunamadı." });
+                }
+
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var response = await _httpClient.GetAsync($"{_apiUrl}/api/User");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadAsStringAsync();
+                    var users = JsonConvert.DeserializeObject<dynamic>(result);
+                    return Json(new { success = true, data = users });
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Get Users Error: {response.StatusCode} - {error}");
+                    return Json(new { success = false, message = $"Kullanıcılar getirilemedi: {error}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Exception in GetUsers: {ex.Message}");
+                return Json(new { success = false, message = $"Hata: {ex.Message}" });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUser(int id)
+        {
+            try
+            {
+                var token = HttpContext.Session.GetString("JWToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    return Json(new { success = false, message = "Oturum bulunamadı." });
+                }
+
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var response = await _httpClient.GetAsync($"{_apiUrl}/api/User/{id}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadAsStringAsync();
+                    var user = JsonConvert.DeserializeObject<dynamic>(result);
+                    return Json(new { success = true, data = user });
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Get User Error: {response.StatusCode} - {error}");
+                    return Json(new { success = false, message = $"Kullanıcı bulunamadı: {error}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Exception in GetUser: {ex.Message}");
+                return Json(new { success = false, message = $"Hata: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddUser(string firstName, string lastName, string email, string password, string role)
+        {
+            try
+            {
+                if (HttpContext.Session.GetString("UserRole") != "Admin")
+                {
+                    return Json(new { success = false, message = "Bu işlem için yetkiniz yok." });
+                }
+
+                var token = HttpContext.Session.GetString("JWToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    return Json(new { success = false, message = "Oturum bulunamadı." });
+                }
+
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var userData = new
+                {
+                    firstName = firstName,
+                    lastName = lastName,
+                    email = email,
+                    password = password,
+                    role = role
+                };
+
+                var json = JsonConvert.SerializeObject(userData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync($"{_apiUrl}/api/User", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json(new { success = true, message = "Kullanıcı başarıyla eklendi." });
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Add User Error: {response.StatusCode} - {error}");
+                    return Json(new { success = false, message = $"Kullanıcı eklenirken hata oluştu: {error}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Exception in AddUser: {ex.Message}");
+                return Json(new { success = false, message = $"Hata: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateUser(int id, string firstName, string lastName, string email, string role)
+        {
+            try
+            {
+                if (HttpContext.Session.GetString("UserRole") != "Admin")
+                {
+                    return Json(new { success = false, message = "Bu işlem için yetkiniz yok." });
+                }
+
+                var token = HttpContext.Session.GetString("JWToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    return Json(new { success = false, message = "Oturum bulunamadı." });
+                }
+
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var userData = new
+                {
+                    id = id,
+                    firstName = firstName,
+                    lastName = lastName,
+                    email = email,
+                    role = role
+                };
+
+                var json = JsonConvert.SerializeObject(userData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PutAsync($"{_apiUrl}/api/User/{id}", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json(new { success = true, message = "Kullanıcı başarıyla güncellendi." });
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Update User Error: {response.StatusCode} - {error}");
+                    return Json(new { success = false, message = $"Kullanıcı güncellenirken hata oluştu: {error}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Exception in UpdateUser: {ex.Message}");
+                return Json(new { success = false, message = $"Hata: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            try
+            {
+                if (HttpContext.Session.GetString("UserRole") != "Admin")
+                {
+                    return Json(new { success = false, message = "Bu işlem için yetkiniz yok." });
+                }
+
+                var token = HttpContext.Session.GetString("JWToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    return Json(new { success = false, message = "Oturum bulunamadı." });
+                }
+
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var response = await _httpClient.DeleteAsync($"{_apiUrl}/api/User/{id}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json(new { success = true, message = "Kullanıcı başarıyla silindi." });
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Delete User Error: {response.StatusCode} - {error}");
+                    return Json(new { success = false, message = $"Kullanıcı silinirken hata oluştu: {error}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Exception in DeleteUser: {ex.Message}");
                 return Json(new { success = false, message = $"Hata: {ex.Message}" });
             }
         }
@@ -621,7 +879,7 @@ namespace EgitimPortali.UI.Controllers
             }
         }
 
-        // API TEST METODLARI - YENİ EKLENEN
+        // API TEST METODLARI
         [HttpGet]
         public async Task<IActionResult> TestApi()
         {
@@ -662,7 +920,7 @@ namespace EgitimPortali.UI.Controllers
                 // Categories endpoint testi
                 try
                 {
-                    var categoriesUrl = $"{_apiUrl}/api/Categories";
+                    var categoriesUrl = $"{_apiUrl}/api/Category";
                     var catResponse = await _httpClient.GetAsync(categoriesUrl);
                     var catContent = await catResponse.Content.ReadAsStringAsync();
 
@@ -681,7 +939,7 @@ namespace EgitimPortali.UI.Controllers
                     results.tests.Add(new
                     {
                         test = "Categories Endpoint",
-                        url = $"{_apiUrl}/api/Categories",
+                        url = $"{_apiUrl}/api/Category",
                         status = "Exception",
                         success = false,
                         error = ex.Message
@@ -711,6 +969,52 @@ namespace EgitimPortali.UI.Controllers
                     {
                         test = "Courses Endpoint",
                         url = $"{_apiUrl}/api/Courses",
+                        status = "Exception",
+                        success = false,
+                        error = ex.Message
+                    });
+                }
+
+                // Users endpoint testi
+                try
+                {
+                    var token = HttpContext.Session.GetString("JWToken");
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                        var usersUrl = $"{_apiUrl}/api/User";
+                        var usersResponse = await _httpClient.GetAsync(usersUrl);
+                        var usersContent = await usersResponse.Content.ReadAsStringAsync();
+
+                        results.tests.Add(new
+                        {
+                            test = "Users Endpoint",
+                            url = usersUrl,
+                            status = usersResponse.StatusCode.ToString(),
+                            success = usersResponse.IsSuccessStatusCode,
+                            contentLength = usersContent?.Length ?? 0,
+                            content = !string.IsNullOrEmpty(usersContent) ? usersContent.Substring(0, Math.Min(200, usersContent.Length)) : "Boş içerik"
+                        });
+                    }
+                    else
+                    {
+                        results.tests.Add(new
+                        {
+                            test = "Users Endpoint",
+                            url = $"{_apiUrl}/api/User",
+                            status = "Skipped",
+                            success = false,
+                            error = "Token bulunamadı, test atlandı"
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    results.tests.Add(new
+                    {
+                        test = "Users Endpoint",
+                        url = $"{_apiUrl}/api/User",
                         status = "Exception",
                         success = false,
                         error = ex.Message
